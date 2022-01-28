@@ -305,7 +305,7 @@ def display_merge_lines(image_record, model):
 import torchvision.transforms as TT
 
 
-def cut_to_mnist(multi_img, merge_points, multi_img_label):
+def cut_to_mnist(multi_img, merge_points):
     mnist_images = []
     top_vertical = 0
     top_horizontal = 0
@@ -331,9 +331,7 @@ def cut_to_mnist(multi_img, merge_points, multi_img_label):
 
         mnist_images.append(img)
 
-    labels = [c for c in str(multi_img_label)]
-
-    return mnist_images, labels
+    return mnist_images
 
 
 # from single_mnist.ipynb ----------------------------------------------------------------------
