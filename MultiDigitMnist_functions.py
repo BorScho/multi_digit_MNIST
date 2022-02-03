@@ -9,35 +9,22 @@ from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 
 
-"""
+def merge_MNIST(data, nof_digits=2):
+    """
     Glues Mnist-Image data fo 28 X 28 images to a multi-figure number.
-    The width of the images is randomly clipped before glueing to make it more alike a real hand written multi-cifer number.
+    The width of the images is randomly clipped before glueing to make it more alike a real hand written multi-digit number.
     Finally the image is filled with black pixels to a length of a multiple of 28.
-    
+
     Input:
-        nof_cifers : number of figures in the output number
+        nof_digits : number of figures in the output number
         data : torch.dataset containing (image, label) - pairs
-    
+
     Output:
         returns :
-            multi_img : a torch tensor of the image of the glued numbers - size: [1, 28, nof_cifers X 28]
+            multi_img : a torch tensor of the image of the glued numbers - size: [1, 28, nof_digits X 28]
             multi_img_label : a torch.int32 number glued from the individual labels
             merge_points : a list of integers giving the x-coordinates of the points where the MNIST numbers where glued
-"""
-
-
-def merge_MNIST(data, nof_cifers=2):
-
-    # check for some bogus input:
-    # if nof_cifers == 1:
-    #    return data[0], data[1], [data[0].shape[1]]
-
-    # if len(data) == 1:
-    #    return data[0][0], data[0[1], [data[0][0].shape[1]]
-
-    # if nof_cifers > len(data):
-    #    return data[0][0], data[0[1], [data[0][0].shape[1]]
-
+    """
     crop_height = 28
     crop_images = []
     labels = []
@@ -45,7 +32,7 @@ def merge_MNIST(data, nof_cifers=2):
     merge_point = 0
     nof_images = len(data)
     # initialization of random generator:
-    for i in range(nof_cifers):
+    for i in range(nof_digits):
         # chose random image:
         sample_id = torch.randint(nof_images, size=(1,), dtype=torch.int32).item()
         img, label = data[sample_id]
@@ -64,7 +51,7 @@ def merge_MNIST(data, nof_cifers=2):
         # plt.imshow(crpimg.squeeze(), cmap="gray") # for debugging
 
     # fill image with black space to full dimensions:
-    black_fill = torch.zeros([1, 28, nof_cifers * 28 - merge_points[-1]])
+    black_fill = torch.zeros([1, 28, nof_digits * 28 - merge_points[-1]])
     crop_images.append(black_fill)
     multi_img = torch.cat(crop_images, dim=2)
     multi_img_label = "".join([str(j) for j in labels])
@@ -73,42 +60,39 @@ def merge_MNIST(data, nof_cifers=2):
     return multi_img, multi_img_label, merge_points
 
 
-"""
-Generates and writes a given number of images-records of handwritten numbers, consisting of a given number of digits (ciphers) 
-into a directory. 
-A record is a dictionary with the following entries:
-record["multi_img"] : image tensor glued from several Mnist images, 
-record["multi_img_label"] : multi label the number represented in the image, 
-record["merge_points"] : merge points' x-coordinates - the places where the images have been glued together
-The names of the images generated are for example:
-filename: "1234" + "_26_48_75_97" + ".pt" for an image of the number "1234" and merge-points at 26, 48, 75, 97 pixels, counted from the left border.
+def write_multi_records(target_directory, number_of_digits, mumber_of_records):
+    """
+    Generates and writes a given number of images-records of handwritten numbers, consisting of a given number of digits
+    into a directory.
+    A record is a dictionary with the following entries:
+    record["multi_img"] : image tensor glued from several Mnist images,
+    record["multi_img_label"] : multi label the number represented in the image,
+    record["merge_points"] : merge points' x-coordinates - the places where the images have been glued together
+    The names of the images generated are for example:
+    filename: "1234" + "_26_48_75_97" + ".pt" for an image of the number "1234" and merge-points at 26, 48, 75, 97 pixels, counted from the left border.
 
-Input:
-    target_directory : directory to write the images into
-    number_of_ciphers : the number of digits an immage has to contain
-    number_of_records : the number of images generated an written in to the directory
+    Input:
+        target_directory : directory to write the images into
+        number_of_digits : the number of digits an immage has to contain
+        number_of_records : the number of images generated an written in to the directory
 
-Output:
-    a number of image-records written into the directory.
-    An image-record is a dictionary with the structure:
-    record["multi_img"] : image tensor, 
-    record["multi_img_label"] : multi label, 
-    record["merge_points"] : merge points x-coordinates
+    Output:
+        a number of image-records written into the directory.
+        An image-record is a dictionary with the structure:
+        record["multi_img"] : image tensor,
+        record["multi_img_label"] : multi label,
+        record["merge_points"] : merge points x-coordinates
 
-    returns : 
-        None
-"""
-
-
-def write_multi_records(target_directory, number_of_cifers, mumber_of_records):
+        returns :
+            None
+    """
     target_dir = Path(target_directory)
     target_dir.mkdir(exist_ok=True)
-    nof_cifers = number_of_cifers
 
     # Write mumber_of_records samples into folder:
     for i in range(mumber_of_records):
         multi_img, multi_img_label, merge_points = merge_MNIST(
-            training_data, nof_cifers=number_of_cifers
+            training_data, nof_digits=number_of_digits
         )
         multi_record = {
             "multi_img": multi_img,
@@ -306,6 +290,14 @@ import torchvision.transforms as TT
 
 
 def cut_to_mnist(multi_img, merge_points):
+    """
+    Cuts the input image (multi-digit) vertically by the merge_points and returns a list of images
+    Input:
+        multi_img: torch tensor to be cut into pieces
+        merge_points: list of integers giving the horizontal-coordinate (in pixels) of the places to make the cut
+    Output:
+        A Python list of images.
+    """
     mnist_images = []
     top_vertical = 0
     top_horizontal = 0
